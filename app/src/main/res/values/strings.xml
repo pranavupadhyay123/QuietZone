@@ -7,4 +7,5 @@
     <string name="notification_title" />
     <string name="notification_content" />
     <string name="geofence_transition_invalid_type" />
+    <string name="QuietZone" />
 </resources>

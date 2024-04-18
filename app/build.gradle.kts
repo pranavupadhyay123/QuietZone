@@ -18,8 +18,13 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+            isJniDebuggable = false
+            isRenderscriptDebuggable = false
+            isDebuggable = false
+            renderscriptOptimLevel = 3
         }
     }
     compileOptions {
@@ -34,6 +39,7 @@ dependencies {
     implementation (libs.activity.ktx)
     implementation(libs.constraintlayout)
     implementation(libs.play.services.location)
+    implementation(libs.activity)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
