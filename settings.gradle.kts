@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "auto silent"
+rootProject.name = "Quiet Zone"
 include(":app")
  

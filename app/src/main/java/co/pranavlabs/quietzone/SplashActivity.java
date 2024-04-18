@@ -1,4 +1,4 @@
-package co.pranavlabs.autosilent;
+package co.pranavlabs.quietzone;
 
 import android.content.Intent;
 import android.os.Bundle;

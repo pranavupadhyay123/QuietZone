@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">auto silent</string>
+    <string name="app_name">Quiet Zone</string>
     <string name="create_circle">Create Circle</string>
     <string name="channel_name" />
     <string name="channel_description" />

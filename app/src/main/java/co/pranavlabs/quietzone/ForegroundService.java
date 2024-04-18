@@ -1,9 +1,9 @@
-package co.pranavlabs.autosilent;
+package co.pranavlabs.quietzone;
 
-import static co.pranavlabs.autosilent.MainActivity.CIRCLE_LATITUDE;
-import static co.pranavlabs.autosilent.MainActivity.CIRCLE_LONGITUDE;
-import static co.pranavlabs.autosilent.MainActivity.MAX_CIRCLES;
-import static co.pranavlabs.autosilent.MainActivity.PREFS_NAME;
+import static co.pranavlabs.quietzone.MainActivity.CIRCLE_LATITUDE;
+import static co.pranavlabs.quietzone.MainActivity.CIRCLE_LONGITUDE;
+import static co.pranavlabs.quietzone.MainActivity.MAX_CIRCLES;
+import static co.pranavlabs.quietzone.MainActivity.PREFS_NAME;
 
 import android.Manifest;
 import android.app.Notification;

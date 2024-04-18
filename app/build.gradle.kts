@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "co.pranavlabs.autosilent"
+    namespace = "co.pranavlabs.quietzone"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "co.pranavlabs.autosilent"
+        applicationId = "co.pranavlabs.quietzone"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

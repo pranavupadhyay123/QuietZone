@@ -1,4 +1,4 @@
-package co.pranavlabs.autosilent;
+package co.pranavlabs.quietzone;
 
 import android.Manifest;
 import android.app.NotificationManager;
