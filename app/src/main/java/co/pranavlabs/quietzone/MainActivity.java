@@ -11,12 +11,18 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
@@ -32,7 +38,6 @@ import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.Task;
-
 
 
 @RequiresApi(api = Build.VERSION_CODES.O)
@@ -51,8 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private SharedPreferences sharedPreferences;
     private int clickCounter = 0;
-
-
+    Button button;
 
 
     @Override
@@ -76,6 +80,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         startForegroundService(new Intent(this, ForegroundService.class));
+
+        ImageButton button = findViewById(R.id.clickBtn);
+        button.setOnClickListener(view -> {
+            PopupMenu popupMenu = new PopupMenu(MainActivity.this, button);
+            popupMenu.getMenuInflater().inflate(R.menu.menu_main, popupMenu.getMenu());
+            popupMenu.setOnMenuItemClickListener(menuItem -> {
+                if (menuItem.getItemId() == R.id.clear_storage) {
+                    onClearStorageClicked(view); // Call the function to clear storage
+                    // Add more cases for other menu items if needed
+                }
+                return true;
+            });
+            popupMenu.show();
+        });
+
+
+
     }
 
 
