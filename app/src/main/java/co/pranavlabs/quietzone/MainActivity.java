@@ -34,12 +34,13 @@ import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.Objects;
+
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMapClickListener {
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 2;
-    private boolean notificationPermissionRequested = false;
     public static final String PREFS_NAME = "MyPrefsFile";
     public static final String PREF_LATITUDE = "latitude";
     private static final String PREF_LONGITUDE = "longitude";
@@ -52,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int clickCounter = 0;
     Button button;
 
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        boolean notificationPermissionRequested = false;
         if (!notificationPermissionRequested) {
             requestNotificationPermission();
         }
@@ -310,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setCategory(NotificationCompat.CATEGORY_CALL)
                     .setAutoCancel(true);
-            notificationManager.notify(0, builder.build());
+            Objects.requireNonNull(notificationManager).notify(0, builder.build());
         }
     }
 

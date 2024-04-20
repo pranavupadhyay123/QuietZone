@@ -30,10 +30,12 @@ public class ForegroundService extends Service {
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
     private static final int LOCATION_REQUEST_INTERVAL = 10000;
     private static final int CIRCLE_RADIUS = 100;
+    private static final int MIN_DISTANCE_CHANGE = 10; // Minimum distance change to trigger location update
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
     private SharedPreferences sharedPreferences;
     private boolean locationPermissionGranted;
+    private Location lastLocation; // Store last location to calculate distance change
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -48,7 +50,6 @@ public class ForegroundService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Foreground Service")
                 .setContentText("Your app is running in the background")
@@ -116,9 +117,14 @@ public class ForegroundService extends Service {
 
     private void handleLocationUpdates(Location location) {
         if (location != null) {
-            Log.d("LocationUpdate", "Latitude: " + location.getLatitude() + ", Longitude: " + location.getLongitude());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                checkIfInsideAnyCircle(new LatLng(location.getLatitude(), location.getLongitude()));
+            if (lastLocation != null && lastLocation.distanceTo(location) >= MIN_DISTANCE_CHANGE) {
+                Log.d("LocationUpdate", "Latitude: " + location.getLatitude() + ", Longitude: " + location.getLongitude());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    checkIfInsideAnyCircle(new LatLng(location.getLatitude(), location.getLongitude()));
+                }
+                lastLocation = location; // Update last location
+            } else if (lastLocation == null) {
+                lastLocation = location; // Initialize last location
             }
         }
     }

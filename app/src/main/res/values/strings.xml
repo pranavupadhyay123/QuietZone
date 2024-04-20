@@ -1,11 +1,8 @@
 <resources>
     <string name="app_name">Quiet Zone</string>
     <string name="create_circle">Create Circle</string>
-    <string name="geofence_transition_invalid_type" />
     <string name="QuietZone" />
     <string name="clear_storage">Clear All Quiet Zones</string>
-    <string name="dnd_channel_name">DND Channel Name</string>
-    <string name="dnd_channel_description">DND Channel Description</string>
     <string name="menu_button">Menu</string>
     <string name="find_my_location">Find My Location</string>
 </resources>
