@@ -75,36 +75,39 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         startForegroundService(new Intent(this, ForegroundService.class));
 
         ImageButton button = findViewById(R.id.clickBtn);
-        button.setOnClickListener(view -> {
-            PopupMenu popupMenu = new PopupMenu(MainActivity.this, button);
-            popupMenu.getMenuInflater().inflate(R.menu.menu_main, popupMenu.getMenu());
-            popupMenu.setOnMenuItemClickListener(menuItem -> {
-                if (menuItem.getItemId() == R.id.clear_storage) {
-                    onClearStorageClicked(view);
-
-                }
-                return true;
-            });
-            popupMenu.show();
-        });
+        button.setOnClickListener(this::showPopupMenu);
 
         Button btnFindLocation = findViewById(R.id.btn_find_location);
-        btnFindLocation.setOnClickListener(view -> {
-            moveCameraToCurrentLocation();
-        });
+        btnFindLocation.setOnClickListener(v -> moveCameraToCurrentLocation());
+    }
 
+    private void showPopupMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(MainActivity.this, view);
+        popupMenu.getMenuInflater().inflate(R.menu.menu_main, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.clear_storage) {
+                onClearStorageClicked(view);
+                return true;
+            }
+            return false;
+        });
+        popupMenu.show();
     }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setOnMapClickListener(this);
-        enableMyLocation();
-        restoreCircles();
-        moveCameraToCurrentLocation();
+        setUpMap();
+    }
+
+    private void setUpMap() {
         mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         mMap.getUiSettings().setTiltGesturesEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        enableMyLocation();
+        restoreCircles();
+        moveCameraToCurrentLocation();
     }
 
     private void enableMyLocation() {
@@ -112,8 +115,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
         } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
@@ -122,10 +124,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
             @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                enableMyLocation();
-            }
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation();
         }
     }
 
