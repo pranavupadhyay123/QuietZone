@@ -8,5 +8,5 @@
     <string name="notification_content" />
     <string name="geofence_transition_invalid_type" />
     <string name="QuietZone" />
-    <string name="clear_storage">Clear Storage</string>
+    <string name="clear_storage">Clear Quiet Zones</string>
 </resources>
