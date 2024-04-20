@@ -26,7 +26,6 @@ import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -34,7 +33,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.Task;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMapClickListener {
@@ -92,6 +90,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return false;
         });
         popupMenu.show();
+    }
+
+    public void onClearStorageClicked(View view) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+        mMap.clear();
+        clickCounter = 0;
     }
 
     @Override
@@ -174,8 +180,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void moveCameraToPosition(LatLng position) {
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 15);
-        mMap.moveCamera(cameraUpdate);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 15));
     }
 
     private void checkIfInsideAnyCircle(LatLng point) {
@@ -194,99 +199,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         }
-        if (insideAnyCircle) {
-            toggleNotificationMode(true);
-            System.out.println("You are inside. DND mode enabled.");
-        } else {
-            toggleNotificationMode(false);
-            System.out.println("You are outside. DND mode disabled.");
-        }
-    }
-
-    private final Handler mHandler = new Handler();
-    private static final long DELAY_INTERVAL = 10000;
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        startLocationCheck();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        startLocationCheck();
-    }
-
-    private void startLocationCheck() {
-        mHandler.postDelayed(mRunnable, DELAY_INTERVAL);
-    }
-
-    private void stopLocationCheck() {
-        mHandler.removeCallbacks(mRunnable);
-    }
-
-    private final Runnable mRunnable = new Runnable() {
-        @Override
-        public void run() {
-
-            LatLng currentLocation = getCurrentLocation();
-            if (currentLocation != null) {
-                checkIfInsideAnyCircle(currentLocation);
-            }
-
-            mHandler.postDelayed(this, DELAY_INTERVAL);
-        }
-    };
-
-    private LatLng currentLocation;
-
-    private LatLng getCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-                    LOCATION_PERMISSION_REQUEST_CODE);
-            return null;
-        }
-
-        Task<Location> locationTask = fusedLocationClient.getLastLocation();
-        locationTask.addOnSuccessListener(location -> {
-            if (location != null) {
-
-                currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            }
-        });
-
-        return currentLocation;
-    }
-
-    private void requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (!notificationManager.isNotificationPolicyAccessGranted()) {
-                Intent intent = new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-                startActivityForResult(intent, NOTIFICATION_PERMISSION_REQUEST_CODE);
-                notificationPermissionRequested = true;
-            }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                if (notificationManager.isNotificationPolicyAccessGranted()) {
-                    System.out.println("ok done");
-                } else {
-                    requestNotificationPermission();
-                }
-            }
-        }
+        toggleNotificationMode(insideAnyCircle);
+        System.out.println("You are " + (insideAnyCircle ? "inside" : "outside") + ". DND mode "
+                + (insideAnyCircle ? "enabled" : "disabled") + ".");
     }
 
     private void toggleNotificationMode(boolean enableDnd) {
@@ -305,26 +220,86 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public void onClearStorageClicked(View view) {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.clear();
-        editor.apply();
-        mMap.clear();
-        clickCounter = 0;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startLocationCheck();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopLocationCheck();
+    }
+
+    private void startLocationCheck() {
+        mHandler.postDelayed(mRunnable, DELAY_INTERVAL);
+    }
+
+    private void stopLocationCheck() {
+        mHandler.removeCallbacks(mRunnable);
+    }
+
+    private final Handler mHandler = new Handler();
+    private static final long DELAY_INTERVAL = 10000;
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            LatLng currentLocation = getCurrentLocation();
+            if (currentLocation != null) {
+                checkIfInsideAnyCircle(currentLocation);
+            }
+            mHandler.postDelayed(this, DELAY_INTERVAL);
+        }
+    };
+
+    private LatLng getCurrentLocation() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+                if (location != null) {
+                    LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    checkIfInsideAnyCircle(currentLocation);
+                }
+            });
+        } else {
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+        return null;
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null && !notificationManager.isNotificationPolicyAccessGranted()) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                startActivityForResult(intent, NOTIFICATION_PERMISSION_REQUEST_CODE);
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null && notificationManager.isNotificationPolicyAccessGranted()) {
+                System.out.println("Notification policy access granted.");
+            } else {
+                requestNotificationPermission();
+            }
+        }
     }
 
     private void sendNotification(String title, String message) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
             String channelId = "DND_Notifications";
-            CharSequence channelName = "DND Notifications";
-            String channelDescription = "Channel for DND mode notifications";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
-            channel.setDescription(channelDescription);
-
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
+                NotificationChannel channel = new NotificationChannel(channelId, "DND Notifications",
+                        NotificationManager.IMPORTANCE_HIGH);
+                channel.setDescription("Channel for DND mode notifications");
                 notificationManager.createNotificationChannel(channel);
             }
 
@@ -335,8 +310,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setCategory(NotificationCompat.CATEGORY_CALL)
                     .setAutoCancel(true);
-
-            assert notificationManager != null;
             notificationManager.notify(0, builder.build());
         }
     }
@@ -346,15 +319,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) {
-                    LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    moveCameraToPosition(currentLatLng);
+                    moveCameraToPosition(new LatLng(location.getLatitude(), location.getLongitude()));
                 }
             });
         } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
-
 }
