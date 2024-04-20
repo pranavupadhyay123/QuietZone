@@ -11,18 +11,15 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
@@ -95,7 +92,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             popupMenu.show();
         });
 
-
+        Button btnFindLocation = findViewById(R.id.btn_find_location);
+        btnFindLocation.setOnClickListener(view -> {
+            moveCameraToCurrentLocation();
+        });
 
     }
 
@@ -106,7 +106,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMapClickListener(this);
         enableMyLocation();
         restoreCircles();
-        moveCameraToCurrentLocation(); // Call method to move camera to current location
+        moveCameraToCurrentLocation();
+        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        mMap.getUiSettings().setTiltGesturesEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
     }
 
     private void enableMyLocation() {
