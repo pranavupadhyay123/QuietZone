@@ -1,6 +1,7 @@
 package co.pranavlabs.quietzone;
 
 import android.Manifest;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -83,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMapClickListener(this);
         enableMyLocation();
         restoreCircles();
+        moveCameraToCurrentLocation(); // Call method to move camera to current location
     }
 
     private void enableMyLocation() {
@@ -191,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onPause() {
         super.onPause();
-        stopLocationCheck();
+        startLocationCheck();
     }
 
     private void startLocationCheck() {
@@ -278,13 +281,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (enableDnd) {
                 if (notificationManager.isNotificationPolicyAccessGranted()) {
                     notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
+                    sendNotification("Do Not Disturb Enabled", "DND mode has been enabled.");
                 }
-
             } else {
+                // Commenting out the original code to disable DND mode
+                // notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+
+                // Overriding DND mode to allow notifications
                 notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+                sendNotification("Do Not Disturb Disabled", "DND mode has been disabled.");
             }
         }
     }
+
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -298,6 +307,59 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.clear();
         clickCounter = 0;
     }
+
+
+
+
+    private void sendNotification(String title, String message) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create notification channel
+            String channelId = "DND_Notifications";
+            CharSequence channelName = "DND Notifications";
+            String channelDescription = "Channel for DND mode notifications";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
+            channel.setDescription(channelDescription);
+
+            // Register the channel with the system
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+
+            // Create notification with high priority and bypass interruption filter
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_CALL) // Use CATEGORY_ALARM to bypass DND
+                    .setAutoCancel(true);
+
+            // Show notification
+            assert notificationManager != null;
+            notificationManager.notify(0, builder.build());
+        }
+    }
+
+
+    private void moveCameraToCurrentLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+                if (location != null) {
+                    LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    moveCameraToPosition(currentLatLng);
+                }
+            });
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+
 
 
 }
