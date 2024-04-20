@@ -36,7 +36,6 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.Task;
 
-
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMapClickListener {
 
@@ -55,19 +54,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int clickCounter = 0;
     Button button;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map_fragment);
         assert mapFragment != null;
         mapFragment.getMapAsync(this);
 
-        // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -84,8 +80,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             popupMenu.getMenuInflater().inflate(R.menu.menu_main, popupMenu.getMenu());
             popupMenu.setOnMenuItemClickListener(menuItem -> {
                 if (menuItem.getItemId() == R.id.clear_storage) {
-                    onClearStorageClicked(view); // Call the function to clear storage
-                    // Add more cases for other menu items if needed
+                    onClearStorageClicked(view);
+
                 }
                 return true;
             });
@@ -98,7 +94,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
     }
-
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -113,18 +108,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void enableMyLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -146,8 +142,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .center(position)
                 .radius(100)
                 .strokeColor(Color.BLUE)
-                .fillColor(Color.argb(70, 0, 0, 255))); // Transparent blue
-        // Save location to SharedPreferences
+                .fillColor(Color.argb(70, 0, 0, 255)));
         saveCirclePosition(position);
     }
 
@@ -190,24 +185,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (circleLat != 0 && circleLng != 0) {
                 LatLng circleCenter = new LatLng(circleLat, circleLng);
                 float[] distance = new float[1];
-                Location.distanceBetween(point.latitude, point.longitude, circleCenter.latitude, circleCenter.longitude, distance);
-                if (distance[0] <= 100) { // Assuming the radius is 100 meters
+                Location.distanceBetween(point.latitude, point.longitude, circleCenter.latitude, circleCenter.longitude,
+                        distance);
+                if (distance[0] <= 100) {
                     insideAnyCircle = true;
                     break;
                 }
             }
         }
         if (insideAnyCircle) {
-            toggleNotificationMode(true); // Enable DND mode
+            toggleNotificationMode(true);
             System.out.println("You are inside. DND mode enabled.");
         } else {
-            toggleNotificationMode(false); // Disable DND mode
+            toggleNotificationMode(false);
             System.out.println("You are outside. DND mode disabled.");
         }
     }
 
     private final Handler mHandler = new Handler();
-    private static final long DELAY_INTERVAL = 10000; // 10 seconds
+    private static final long DELAY_INTERVAL = 10000;
 
     @Override
     protected void onResume() {
@@ -232,12 +228,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final Runnable mRunnable = new Runnable() {
         @Override
         public void run() {
-            // Check current location
+
             LatLng currentLocation = getCurrentLocation();
             if (currentLocation != null) {
                 checkIfInsideAnyCircle(currentLocation);
             }
-            // Repeat the check after delay
+
             mHandler.postDelayed(this, DELAY_INTERVAL);
         }
     };
@@ -245,29 +241,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LatLng currentLocation;
 
     private LatLng getCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Request permission if not granted
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                    LOCATION_PERMISSION_REQUEST_CODE);
             return null;
         }
 
-        // Fetch the last known location
         Task<Location> locationTask = fusedLocationClient.getLastLocation();
         locationTask.addOnSuccessListener(location -> {
             if (location != null) {
-                // Got last known location
+
                 currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
             }
         });
 
         return currentLocation;
     }
-
-//no change in above code-----------------------------------------------------------------------
-
-
-
 
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -279,8 +272,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
     }
-
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -297,8 +288,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-
-
     private void toggleNotificationMode(boolean enableDnd) {
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         if (notificationManager != null) {
@@ -308,21 +297,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     sendNotification("Do Not Disturb Enabled", "DND mode has been enabled.");
                 }
             } else {
-                // Commenting out the original code to disable DND mode
-                // notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
 
-                // Overriding DND mode to allow notifications
                 notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
                 sendNotification("Do Not Disturb Disabled", "DND mode has been disabled.");
             }
         }
     }
-
-
-//-------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
 
     public void onClearStorageClicked(View view) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -332,12 +312,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clickCounter = 0;
     }
 
-
-
-
     private void sendNotification(String title, String message) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Create notification channel
+
             String channelId = "DND_Notifications";
             CharSequence channelName = "DND Notifications";
             String channelDescription = "Channel for DND mode notifications";
@@ -345,31 +322,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
             channel.setDescription(channelDescription);
 
-            // Register the channel with the system
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
             }
 
-            // Create notification with high priority and bypass interruption filter
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
                     .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle(title)
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setCategory(NotificationCompat.CATEGORY_CALL) // Use CATEGORY_ALARM to bypass DND
+                    .setCategory(NotificationCompat.CATEGORY_CALL)
                     .setAutoCancel(true);
 
-            // Show notification
             assert notificationManager != null;
             notificationManager.notify(0, builder.build());
         }
     }
 
-
     private void moveCameraToCurrentLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 if (location != null) {
                     LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -378,12 +351,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             });
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
-
-
-
 
 }

@@ -26,8 +26,6 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 
-import java.util.Objects;
-
 public class ForegroundService extends Service {
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
     private static final int LOCATION_REQUEST_INTERVAL = 10000;
@@ -44,7 +42,8 @@ public class ForegroundService extends Service {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         createLocationCallback();
         sharedPreferences = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE);
-        locationPermissionGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        locationPermissionGranted = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -79,10 +78,11 @@ public class ForegroundService extends Service {
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
                     "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
+                    NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager manager = getSystemService(NotificationManager.class);
-            Objects.requireNonNull(manager).createNotificationChannel(serviceChannel);
+            if (manager != null) {
+                manager.createNotificationChannel(serviceChannel);
+            }
         }
     }
 
@@ -132,7 +132,8 @@ public class ForegroundService extends Service {
             if (circleLat != 0 && circleLng != 0) {
                 LatLng circleCenter = new LatLng(circleLat, circleLng);
                 float[] distance = new float[1];
-                Location.distanceBetween(point.latitude, point.longitude, circleCenter.latitude, circleCenter.longitude, distance);
+                Location.distanceBetween(point.latitude, point.longitude, circleCenter.latitude, circleCenter.longitude,
+                        distance);
                 if (distance[0] <= CIRCLE_RADIUS) {
                     insideAnyCircle = true;
                     break;
