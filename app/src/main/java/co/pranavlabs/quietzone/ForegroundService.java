@@ -1,10 +1,5 @@
 package co.pranavlabs.quietzone;
 
-import static co.pranavlabs.quietzone.MainActivity.CIRCLE_LATITUDE;
-import static co.pranavlabs.quietzone.MainActivity.CIRCLE_LONGITUDE;
-import static co.pranavlabs.quietzone.MainActivity.MAX_CIRCLES;
-import static co.pranavlabs.quietzone.MainActivity.PREFS_NAME;
-
 import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -31,9 +26,12 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.Objects;
+
 public class ForegroundService extends Service {
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
-    private static final int LOCATION_REQUEST_INTERVAL = 5000; // 5 seconds
+    private static final int LOCATION_REQUEST_INTERVAL = 10000; // 5 seconds
+    private static final int CIRCLE_RADIUS = 100; // Radius in meters
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
 
@@ -79,7 +77,7 @@ public class ForegroundService extends Service {
                     NotificationManager.IMPORTANCE_DEFAULT
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
+            Objects.requireNonNull(manager).createNotificationChannel(serviceChannel);
         }
     }
 
@@ -88,24 +86,15 @@ public class ForegroundService extends Service {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                // Handle location updates here
-                Location location = locationResult.getLastLocation();
-                if (location != null) {
-                    Log.d("LocationUpdate", "Latitude: " + location.getLatitude() + ", Longitude: " + location.getLongitude());
-                    // Check if inside circle radius
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        checkIfInsideAnyCircle(new LatLng(location.getLatitude(), location.getLongitude()));
-                    }
-                }
+                handleLocationUpdates(locationResult.getLastLocation());
             }
         };
     }
 
     private void requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.requestLocationUpdates(createLocationRequest(), locationCallback, null);
         }
-        fusedLocationClient.requestLocationUpdates(createLocationRequest(), locationCallback, null);
     }
 
     private void stopLocationUpdates() {
@@ -114,50 +103,46 @@ public class ForegroundService extends Service {
 
     private static LocationRequest createLocationRequest() {
         LocationRequest locationRequest = LocationRequest.create();
-        /* 5 secs */
-        long UPDATE_INTERVAL = 5000;
-        locationRequest.setInterval(UPDATE_INTERVAL);
-        /* 2 sec */
-        long FASTEST_INTERVAL = 2000;
-        locationRequest.setFastestInterval(FASTEST_INTERVAL);
+        locationRequest.setInterval(LOCATION_REQUEST_INTERVAL);
+        locationRequest.setFastestInterval(LOCATION_REQUEST_INTERVAL / 2);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         return locationRequest;
     }
 
+    private void handleLocationUpdates(Location location) {
+        if (location != null) {
+            Log.d("LocationUpdate", "Latitude: " + location.getLatitude() + ", Longitude: " + location.getLongitude());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                checkIfInsideAnyCircle(new LatLng(location.getLatitude(), location.getLongitude()));
+            }
+        }
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void checkIfInsideAnyCircle(LatLng point) {
+        SharedPreferences sharedPreferences = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE);
         boolean insideAnyCircle = false;
-        SharedPreferences sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        for (int i = 0; i < MAX_CIRCLES; i++) {
-            float circleLat = sharedPreferences.getFloat(CIRCLE_LATITUDE + i, 0);
-            float circleLng = sharedPreferences.getFloat(CIRCLE_LONGITUDE + i, 0);
+        for (int i = 0; i < MainActivity.MAX_CIRCLES; i++) {
+            float circleLat = sharedPreferences.getFloat(MainActivity.CIRCLE_LATITUDE + i, 0);
+            float circleLng = sharedPreferences.getFloat(MainActivity.CIRCLE_LONGITUDE + i, 0);
             if (circleLat != 0 && circleLng != 0) {
                 LatLng circleCenter = new LatLng(circleLat, circleLng);
                 float[] distance = new float[1];
                 Location.distanceBetween(point.latitude, point.longitude, circleCenter.latitude, circleCenter.longitude, distance);
-                if (distance[0] <= 100) { // Assuming the radius is 100 meters
+                if (distance[0] <= CIRCLE_RADIUS) {
                     insideAnyCircle = true;
                     break;
                 }
             }
         }
-        if (insideAnyCircle) {
-            toggleNotificationMode(true); // Enable DND mode
-            Log.d("ForegroundService", "You are inside. DND mode enabled.");
-        } else {
-            toggleNotificationMode(false); // Disable DND mode
-            Log.d("ForegroundService", "You are outside. DND mode disabled.");
-        }
+        toggleNotificationMode(insideAnyCircle);
     }
 
     private void toggleNotificationMode(boolean enableDnd) {
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         if (notificationManager != null) {
-            if (enableDnd) {
-                if (notificationManager.isNotificationPolicyAccessGranted()) {
-                    notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
-                }
-
+            if (enableDnd && notificationManager.isNotificationPolicyAccessGranted()) {
+                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
             } else {
                 notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
             }
