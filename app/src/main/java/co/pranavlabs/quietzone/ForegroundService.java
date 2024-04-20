@@ -30,16 +30,21 @@ import java.util.Objects;
 
 public class ForegroundService extends Service {
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
-    private static final int LOCATION_REQUEST_INTERVAL = 10000; // 5 seconds
-    private static final int CIRCLE_RADIUS = 100; // Radius in meters
+    private static final int LOCATION_REQUEST_INTERVAL = 10000;
+    private static final int CIRCLE_RADIUS = 100;
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
+    private SharedPreferences sharedPreferences;
+    private boolean locationPermissionGranted;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
         super.onCreate();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         createLocationCallback();
+        sharedPreferences = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE);
+        locationPermissionGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -92,7 +97,7 @@ public class ForegroundService extends Service {
     }
 
     private void requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (locationPermissionGranted) {
             fusedLocationClient.requestLocationUpdates(createLocationRequest(), locationCallback, null);
         }
     }
@@ -120,7 +125,6 @@ public class ForegroundService extends Service {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void checkIfInsideAnyCircle(LatLng point) {
-        SharedPreferences sharedPreferences = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE);
         boolean insideAnyCircle = false;
         for (int i = 0; i < MainActivity.MAX_CIRCLES; i++) {
             float circleLat = sharedPreferences.getFloat(MainActivity.CIRCLE_LATITUDE + i, 0);
