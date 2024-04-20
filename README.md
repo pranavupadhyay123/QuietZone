@@ -42,6 +42,10 @@ QuietZone is an Android application that helps you maintain peace and quiet in d
 
 6. Use the menu options to clear stored data or adjust other settings.
 
+## Release
+
+Download the latest release here [Download Now](https://github.com/pranavupadhyay123/QuietZone/releases/tag/location).
+
 ## Contributing
 
 Contributions are welcome! If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request.
