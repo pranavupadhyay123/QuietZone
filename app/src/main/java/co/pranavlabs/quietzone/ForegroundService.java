@@ -9,8 +9,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -41,6 +43,7 @@ public class ForegroundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        createNotificationChannel();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         createLocationCallback();
         sharedPreferences = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE);
@@ -56,9 +59,7 @@ public class ForegroundService extends Service {
                 .build();
 
         startForeground(1, notification);
-
         requestLocationUpdates();
-
         return START_STICKY;
     }
 

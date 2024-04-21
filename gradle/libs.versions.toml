@@ -11,6 +11,7 @@ constraintlayout = "2.1.4"
 playServicesMaps = "18.2.0"
 playServicesLocation = "21.2.0"
 fragment = "1.6.2"
+gamesActivity = "3.0.3"
 
 [libraries]
 activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
@@ -25,6 +26,7 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
+games-activity = { group = "androidx.games", name = "games-activity", version.ref = "gamesActivity" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -11,6 +11,7 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -22,6 +23,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     static final String CIRCLE_LATITUDE = "circle_latitude";
     static final String CIRCLE_LONGITUDE = "circle_longitude";
     public static final int MAX_CIRCLES = 3;
+    private static final int APP_NOTIFICATION_PERMISSION_REQUEST_CODE = 10;
     private FusedLocationProviderClient fusedLocationClient;
     private GoogleMap mMap;
     private SharedPreferences sharedPreferences;
@@ -80,6 +83,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Button btnFindLocation = findViewById(R.id.btn_find_location);
         btnFindLocation.setOnClickListener(v -> moveCameraToCurrentLocation());
+
+        // Check if app notification permission is granted
+        if (!isAppNotificationPermissionGranted()) {
+            // If not granted, request permission
+            requestAppNotificationPermission();
+        }
+
     }
 
     private void showPopupMenu(View view) {
@@ -207,21 +217,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 + (insideAnyCircle ? "enabled" : "disabled") + ".");
     }
 
+    private boolean isDndEnabled = false; // Track DND status
     private void toggleNotificationMode(boolean enableDnd) {
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         if (notificationManager != null) {
-            if (enableDnd) {
+            if (enableDnd && !isDndEnabled) { // DND enabled and it was not enabled before
                 if (notificationManager.isNotificationPolicyAccessGranted()) {
                     notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
                     sendNotification("Do Not Disturb Enabled", "DND mode has been enabled.");
+                    isDndEnabled = true;
                 }
-            } else {
-
+            } else if (!enableDnd && isDndEnabled) { // DND disabled and it was enabled before
                 notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
                 sendNotification("Do Not Disturb Disabled", "DND mode has been disabled.");
+                isDndEnabled = false;
             }
         }
     }
+
 
     @Override
     protected void onResume() {
@@ -293,6 +306,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 requestNotificationPermission();
             }
         }
+        if (requestCode == APP_NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            System.out.println("Notification policy access granted.");
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requestAppNotificationPermission();
+            }
+        }
     }
 
     private void sendNotification(String title, String message) {
@@ -329,5 +349,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
+    }
+
+    // Method to request app notification permission
+
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    private void requestAppNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null && !notificationManager.isNotificationPolicyAccessGranted()) {
+                Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                startActivityForResult(intent, APP_NOTIFICATION_PERMISSION_REQUEST_CODE);
+            }
+        }
+    }
+
+    private boolean isAppNotificationPermissionGranted() {
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        return notificationManager.areNotificationsEnabled();
     }
 }
